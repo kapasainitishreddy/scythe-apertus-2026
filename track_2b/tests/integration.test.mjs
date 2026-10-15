@@ -54,7 +54,8 @@ test('full HTTP → mocked LLM → queue → independent worker → evidence pip
     let job;
     for(let i=0;i<100;i++){await delay(100);job=await (await fetch(base+'/api/runs/'+started.id)).json();if(job.status!=='running')break;}
     assert.equal(job.status,'verified',JSON.stringify(job));
-    assert.equal(job.evidence.genuineModelRun,true);
+    assert.equal(job.evidence.modelEndpointQueried,true);
+    assert.equal(job.evidence.modelIdentityVerified,false);
     assert.equal(job.evidence.success,true);
     assert.equal(job.evidence.attempts[0].verifierPass,true);
     assert.equal(count,3);

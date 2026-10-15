@@ -194,7 +194,9 @@ export async function repairCase(entry, {client, verifier, onStep=()=>{}, maxAtt
   const evidence = {
     schemaVersion:1,runId:randomUUID(),startedAt,completedAt:new Date().toISOString(),
     caseId:entry.id,model:client.model,providerEndpoint:client.endpoint.replace(/\/chat\/completions$/,''),
-    genuineModelRun:true,baselineFailed:!baseline.ok,diagnosis,
+    modelEndpointQueried:client.requestCount>0,modelIdentityVerified:false,
+    modelIdentityNote:'The configured model identifier is not independently attested by the endpoint.',
+    baselineFailed:!baseline.ok,diagnosis,
     attempts,finalPatch:{path:'bug.cjs',summary:lastPatch.summary,content:lastPatch.content,
       beforeSha256:before,afterSha256:sha256(lastPatch.content)},
     critique,independentlyVerified:finalVerified,success,

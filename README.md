@@ -37,7 +37,7 @@ The code is dependency-light: Node.js standard library, offline `node:test`, and
 
 ## Evaluation status
 
-Local Node execution of the package passed 19/19 tests, including 12 broken/reference fixture pairs and an end-to-end pipeline test using a **mock LLM response server**. This is **not** a real Apertus repair result. An actual Apertus v1.5 run and Docker Compose runtime test are required to claim model performance and deployment reproduction.
+Local Node execution of the package passed 19/19 tests, including 12 broken/reference fixture pairs and an end-to-end pipeline test using a **mock LLM response server**. This is **not** a real Apertus repair result. The API endpoint/model identity cannot be independently authenticated by this prototype; evidence never claims cryptographic model verification. An actual Apertus v1.5 run and Docker Compose runtime test are required to claim model performance and deployment reproduction.
 
 ## Licensing
 

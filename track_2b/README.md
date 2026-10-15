@@ -110,6 +110,7 @@ This validates the curated dataset and executes a full queue-based integration t
 - **19/19** package tests passed on the local test environment as of October 15, 2026.
 - **12/12** broken implementations fail their hidden checks; **12/12** curated reference repairs pass those checks.
 - **Real Apertus repair success rate:** not measured until a genuine model endpoint is used.
+- The configured model identifier is not cryptographically attested by the HTTP API. Evidence records explicitly say `modelIdentityVerified: false`; independent source/test verification is separate from provider/model authenticity.
 - **`make run` Docker Compose:** provided and YAML-parsed, not executed in the current build container because Docker is unavailable there.
 - This test suite is **not** SWE-bench. It does not establish performance on realistic multi-file enterprise repositories.
 - The UI does not authenticate remote users; bind the dashboard to loopback or place it behind a trusted reverse proxy if used outside a judge's workstation.
