@@ -54,6 +54,12 @@ This composes the controller, offline verifier and a third `apertus` model serve
 
 **This optional GPU configuration is provided but was not executed on the current authoring machine.** It is not suitable for a 4 GB consumer GPU. Official model guidance: https://huggingface.co/swiss-ai/Apertus-v1.5-8B/blob/main/README.md .
 
+## Public assets
+
+- [Public source repository](https://github.com/kapasainitishreddy/scythe-apertus-2026)
+- [Report PDF](https://github.com/kapasainitishreddy/scythe-apertus-2026/blob/main/track_2b/Syrava_Report.pdf)
+- [109-second demo preview](https://github.com/kapasainitishreddy/scythe-apertus-2026/blob/main/track_2b/Scythe_Apertus_Demo_Preview.mp4). This shows architecture and true fixture-validation results; it is not a recording of live Apertus inference.
+
 ## End-to-end demonstration
 
 1. Open the dashboard, select `pagination-offset`, and click **Verify fixture**. The verifier executes the broken source (must fail) and the reference source (must pass). This is a dataset quality check **not a model result**.

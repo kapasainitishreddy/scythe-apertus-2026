@@ -3,8 +3,8 @@
 **Hack Apertus 2026 · Online · Track 2B: Own Project**  
 **Team:** Syrava  
 **Project:** An open-source, on-premises repair agent using Apertus v1.5  
-**Demo:** See `docs/DEMO_SCRIPT.md`; live recording link must be entered on the submission portal.  
-**Code:** See the public repository containing `track_2b/`.
+**Demo:** 109-second prototype walkthrough: https://github.com/kapasainitishreddy/scythe-apertus-2026/blob/main/track_2b/Scythe_Apertus_Demo_Preview.mp4 (fixture results, not genuine model results).  
+**Code:** https://github.com/kapasainitishreddy/scythe-apertus-2026 (`track_2b/`); license Apache-2.0.
 
 ## 1. Abstract and problem
 

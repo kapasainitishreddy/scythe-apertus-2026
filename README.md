@@ -19,6 +19,12 @@ Use an on-premises OpenAI-compatible Apertus v1.5 inference server (such as vLLM
 
 The code is dependency-light: Node.js standard library, offline `node:test`, and Docker Compose. **GitHub Actions is neither required nor included.**
 
+## Links
+
+- [Public submission repository](https://github.com/kapasainitishreddy/scythe-apertus-2026)
+- [Technical report PDF](https://github.com/kapasainitishreddy/scythe-apertus-2026/blob/main/track_2b/Syrava_Report.pdf)
+- [109-second prototype walkthrough (not a real-model benchmark)](https://github.com/kapasainitishreddy/scythe-apertus-2026/blob/main/track_2b/Scythe_Apertus_Demo_Preview.mp4)
+
 ## Deliverables
 
 - [Track README](track_2b/README.md) with installation, environment, and honest claims

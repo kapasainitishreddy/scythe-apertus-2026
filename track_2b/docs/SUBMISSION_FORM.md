@@ -18,9 +18,9 @@
 
 **Honest evaluation status:** All 12 original broken cases fail and all 12 curated reference repairs pass their hidden assertions; 19/19 automated tests passed. The full integration test used a controlled mock endpoint. A genuine Apertus repair rate may only be added after real inference has been performed.
 
-**Repository URL:** [REPLACE WITH PUBLIC REPOSITORY URL]
+**Repository URL:** https://github.com/kapasainitishreddy/scythe-apertus-2026
 
-**Demo video URL:** [REPLACE WITH PUBLIC OR UNLISTED VIDEO URL; <= 2 MIN]
+**Demo video URL:** https://github.com/kapasainitishreddy/scythe-apertus-2026/blob/main/track_2b/Scythe_Apertus_Demo_Preview.mp4 (109-second prototype walkthrough; live Apertus run not shown)
 
 **Technical report:** Upload `track_2b/Syrava_Report.pdf` (PDF, <= 6 pages excluding references)
 
