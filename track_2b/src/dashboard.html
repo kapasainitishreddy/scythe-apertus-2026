@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Scythe Apertus | Sovereign Software Repair</title>
+  <meta name="description" content="Sovereign software repair using Apertus 1.5 and isolated test evidence.">
+  <link rel="stylesheet" href="/dashboard.css">
+  <script src="/dashboard.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" aria-label="Navigation">
+      <div class="brand"><span class="brandmark" aria-hidden="true">⌁</span><div><strong>SCYTHE</strong><small>APERTUS / 1.5</small></div></div>
+      <nav><a class="active" href="#overview"><span>◈</span> Overview</a><a href="#benchmarks"><span>▥</span> RepairBench</a><a href="#evidence"><span>◇</span> Evidence</a><a href="#architecture"><span>⌘</span> Architecture</a></nav>
+      <div class="sidebar-foot"><span class="online-dot"></span> Open weights. Verified repairs.<br><small>Hack Apertus · Track 2B</small></div>
+    </aside>
+    <main id="overview">
+      <div class="topbar"><span class="eyebrow">SOVEREIGN SOFTWARE ENGINEERING / 2026</span><span id="connection" class="status-tag">Checking endpoint...</span></div>
+      <header class="intro">
+        <div><span class="section-kicker">ENGINEERING THAT CAN SHOW ITS WORK</span><h1>Fix the bug.<br><em>Prove the fix.</em></h1><p class="lead">Apertus identifies the cause, proposes a minimal patch, and an independent offline verifier tests it. Every attempt becomes inspectable evidence.</p></div>
+        <div class="meta-block"><span>MODEL</span><strong id="modelname">Apertus v1.5 / 8B</strong><span>DEPLOYMENT</span><strong>On-premises · Docker</strong></div>
+      </header>
+      <section class="stats" aria-label="Evaluation statistics">
+        <div><small>ORIGINAL TEST CASES</small><strong id="caseCount">12</strong><span>Independent hidden checks</span></div>
+        <div><small>REAL MODEL REPAIRS</small><strong id="modelRepairs">0</strong><span>Only verified runs count</span></div>
+        <div><small>DATA INTEGRITY</small><strong>SHA-256</strong><span>Every patch and test output</span></div>
+      </section>
+      <section class="workspace" id="benchmarks">
+        <div class="workspace-head"><div><span class="section-kicker">01 / THE LAB</span><h2>RepairBench</h2></div><div class="pill">Curated original dataset · 12 cases</div></div>
+        <div class="workspace-grid">
+          <section class="case-panel" aria-label="Select a software defect"><label for="caseSelect">CHOOSE A REAL DEFECT</label><select id="caseSelect" aria-label="Select test case"></select><div class="case-category" id="category">Loading cases...</div><p id="caseIssue">Select an issue to inspect the failure.</p><div class="button-row"><button class="secondary" id="validateBtn">Verify fixture</button><button class="primary" id="repairBtn">Run Apertus repair ↗</button></div><p class="smallnote" id="actionHelp">No simulated repair success. A live Apertus endpoint is needed for a model run.</p></section>
+          <section class="code-panel" aria-label="Buggy source code"><div class="code-header"><span class="fileicon">JS</span><span>bug.cjs</span><span class="line-indicator">BROKEN SOURCE</span></div><pre><code id="sourceCode">// Loading original defect...</code></pre></section>
+        </div>
+      </section>
+      <section class="results" id="evidence"><div class="result-head"><div><span class="section-kicker">02 / NO HIDDEN CLAIMS</span><h2>Verification evidence</h2></div><span class="eyebrow" id="lastStatus">NOT YET RUN</span></div><div class="result-body"><div class="result-timeline" id="timeline"><div class="trace-step current"><span>01</span><div><strong>Ready for verification</strong><small>Choose a defect and verify its baseline, or run real Apertus.</small></div></div></div><pre class="result-detail" id="evidenceText">Evidence will appear here after a real run. No scores are invented.</pre></div></section>
+      <section class="architecture" id="architecture"><div><span class="section-kicker">03 / SOVEREIGN BY DESIGN</span><h2>Model reasoning, separated from execution.</h2><p>The controller can call Apertus on infrastructure you control. Generated code only reaches an independent verifier with no network, no API key, and a read-only app filesystem.</p></div><div class="arch-flow"><span>ISSUE</span><b>→</b><span>APERTUS 1.5</span><b>→</b><span>ISOLATED TEST</span><b>→</b><span>EVIDENCE</span></div></section>
+      <footer><span>SCYTHE / APERTUS · BUILD IN THE OPEN</span><span>Hack Apertus 2026 · Own Project</span></footer>
+    </main>
+  </div>
+</body>
+</html>

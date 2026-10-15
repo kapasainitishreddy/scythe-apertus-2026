@@ -1,0 +1,8 @@
+**/.env
+**/.env.*
+!**/.env.example
+**/node_modules/
+**/artifacts/*
+!**/artifacts/.gitkeep
+*.log
+.DS_Store

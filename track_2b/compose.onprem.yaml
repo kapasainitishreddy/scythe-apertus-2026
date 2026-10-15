@@ -1,0 +1,21 @@
+# Optional full on-premises model stack, intended for a properly provisioned
+# NVIDIA GPU machine with the NVIDIA Container Toolkit installed.
+# The official Swiss AI Initiative image is used; no model weights are bundled.
+services:
+  app:
+    environment:
+      LLM_NAME: swiss-ai/Apertus-v1.5-8B
+      LLM_BASE_URL: http://apertus:8000/v1
+      LLM_API_KEY: ""
+  apertus:
+    image: ghcr.io/swiss-ai/vllm_apertus_1.5_release:latest-amd64
+    gpus: all
+    environment:
+      HF_TOKEN: "${HF_TOKEN:-}"
+      MODEL_ID: swiss-ai/Apertus-v1.5-8B
+      GPU_MEMORY_UTILIZATION: "0.6"
+      MAX_MODEL_LEN: "8192"
+    volumes:
+      - model_cache:/home/appuser/workspace/hf-home
+volumes:
+  model_cache:

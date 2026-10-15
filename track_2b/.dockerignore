@@ -1,0 +1,8 @@
+.git
+**/.DS_Store
+*.pdf
+artifacts
+.env
+.env.*
+**/node_modules
+**/test-results

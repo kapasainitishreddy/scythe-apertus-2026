@@ -1,0 +1,14 @@
+{
+  "name": "scythe-apertus-hackapertus-2026",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "license": "Apache-2.0",
+  "description": "Sovereign Apertus software repair and independently verified RepairBench demo",
+  "engines": {"node": ">=20"},
+  "scripts": {
+    "start": "node src/server.mjs",
+    "verify": "node --test tests/*.test.mjs",
+    "check:syntax": "node --check src/core.mjs && node --check src/server.mjs && node --check src/verifier.mjs"
+  }
+}
