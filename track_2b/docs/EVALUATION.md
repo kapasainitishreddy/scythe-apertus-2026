@@ -32,6 +32,14 @@ The model receives no hidden test code, no reference patch, and no library of pr
 
 - 12/12 broken implementations failed their hidden assertions.
 - 12/12 curated reference implementations passed.
-- 19/19 local Node tests passed, including a full controller-to-offline-worker integration test that used a mock LLM endpoint.
+- 25/25 local Node tests passed, including a full controller-to-offline-worker integration test that used a mock LLM endpoint.
 - Genuine Apertus inference **not yet measured**.
 - Docker Compose runtime **not executed on this authoring host** (Docker CLI unavailable). Compose YAML parsed successfully.
+
+## Fixed experiment ledger
+
+For real Apertus inference, start the two Docker services and run `docker compose exec -T app node src/benchmark.mjs --limit 2`. After validating the endpoint and inspecting reports, use `--limit 12`. JSON and TSV files include every successful, unresolved or errored case with elapsed milliseconds, calls, token counts when reported, and a link to the SHA-256 evidence record. No model-free or mocked benchmark counts as Apertus performance.
+
+## Security regression checks
+
+The offline worker uses Node's permission model inside Docker. It denies generated code writes, spawning child processes, and reading files outside the temporary fixture. Four security tests specifically exercise these boundaries. The known limitation remains that the fixture's public tests can be analyzed by a motivated adversary; a blinded external holdout is needed before making broad reliability claims.
