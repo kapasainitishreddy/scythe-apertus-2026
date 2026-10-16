@@ -14,9 +14,9 @@
 
 **Purposeful Apertus use:** Apertus v1.5 is the required model engine for root-cause diagnosis, patch generation, verification-feedback retry, and the final critique. Deterministic hidden tests, not the model, make the correctness decision.
 
-**Technical highlights:** Two-service Docker Compose architecture, one-command `make run`, non-root isolated verifier with no network or model credentials, 12 synthetic benchmark tasks with proven broken/fixed discrimination, local Node unit and integration tests, evidence digest, and an accessible dashboard.
+**Technical highlights:** Two-service Docker Compose architecture, one-command `make run` interface, non-root isolated verifier with no network or model credentials, 12 synthetic benchmark tasks with verified broken/fixed discrimination, 27 passing local Node tests, per-run evidence digest, and an accessible dashboard. Docker startup remains unverified on this host.
 
-**Honest evaluation status:** All 12 original broken cases fail and all 12 curated reference repairs pass their hidden assertions; 19/19 automated tests passed. The full integration test used a controlled mock endpoint. A genuine Apertus repair rate may only be added after real inference has been performed.
+**Honest evaluation status:** All 12 original broken cases fail and all 12 curated reference repairs pass their hidden assertions; 27/27 local Node tests passed. The full integration test used a controlled mock endpoint. No genuine Apertus endpoint or credentials were configured, and Docker was unavailable; genuine inference and clean-checkout deployment are not verified. A real repair rate may only be added after real inference has been performed.
 
 **Repository URL:** https://github.com/kapasainitishreddy/scythe-apertus-2026
 

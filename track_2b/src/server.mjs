@@ -3,7 +3,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
-import { ApertusClient, VerifierQueue, loadCases, publicCase, repairCase, saveEvidence } from './core.mjs';
+import { ApertusClient, VerifierQueue, loadCases, publicCase, repairCase, saveEvidence, createFailureEvidence } from './core.mjs';
 
 const dir=dirname(fileURLToPath(import.meta.url));
 const root=join(dir,'..');
@@ -32,14 +32,21 @@ function stateFor(id){return runs.get(id)||null;}
 function jobStep(id,step){const r=runs.get(id);if(r){r.step=step;r.updatedAt=new Date().toISOString();}}
 async function doRepair(id,entry){
   const r=runs.get(id);
+  let model;
   try{
-    const model=new ApertusClient();
+    model=new ApertusClient();
     const evidence=await repairCase(entry,{client:model,verifier:queue,onStep:step=>jobStep(id,step)});
     const artifact=await saveEvidence(evidenceDir,evidence);
     Object.assign(r,{status:evidence.success?'verified':'unresolved',step:'finished',evidence,artifact,
       updatedAt:new Date().toISOString()});
-  }catch(e){Object.assign(r,{status:'failed',step:'error',error:String(e?.message||e).slice(0,350),
-    updatedAt:new Date().toISOString()});}
+  }catch(e){
+    const evidence=createFailureEvidence(entry,model,e,r.createdAt);
+    let artifact=null;
+    try { artifact=await saveEvidence(evidenceDir,evidence); }
+    catch (artifactError) { evidence.artifactError=String(artifactError?.message||artifactError).slice(0,250); }
+    Object.assign(r,{status:'failed',step:'error',error:evidence.error.message,evidence,artifact,
+      updatedAt:new Date().toISOString()});
+  }
 }
 
 const server=http.createServer(async(req,res)=>{

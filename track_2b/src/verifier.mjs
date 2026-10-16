@@ -2,6 +2,7 @@
 import { mkdir, mkdtemp, readFile, writeFile, readdir, rename, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { loadCases } from './core.mjs';
@@ -17,7 +18,7 @@ export async function verifySource(code,hiddenTests,{timeoutMs=12_000}={}) {
     const result=await new Promise(resolveResult=>{
       // Model-generated JS cannot read outside its fixture, write files, or spawn subprocesses.
       // Node permission model adds defense in depth inside the offline container.
-      const child=spawn(process.execPath,['--experimental-permission',`--allow-fs-read=${folder}`,'verify.test.cjs'],{
+      const child=spawn(process.execPath,['--permission',`--allow-fs-read=${folder}`,'verify.test.cjs'],{
         cwd:folder,shell:false,env:{PATH:process.env.PATH||'/usr/local/bin:/usr/bin:/bin',HOME:'/tmp',NODE_ENV:'test'},
         stdio:['ignore','pipe','pipe'],
       });
@@ -64,7 +65,7 @@ export async function runWorker({requestDir=process.env.REQUEST_DIR||'/queue/req
   }
 }
 
-if(process.argv[1] && resolve(process.argv[1])===new URL(import.meta.url).pathname){
+if(process.argv[1] && resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   const controller=new AbortController();
   process.on('SIGTERM',()=>controller.abort());
   process.on('SIGINT',()=>controller.abort());

@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "verifiedAtLocal": "2026-10-15",
+  "timezone": "America/New_York",
+  "environment": {
+    "os": "Windows",
+    "nodeVersion": "24.19.0",
+    "dockerAvailable": false,
+    "makeAvailable": false,
+    "llmBaseUrlConfigured": false,
+    "llmApiKeyConfigured": false
+  },
+  "checks": {
+    "nodeTests": {
+      "status": "passed",
+      "command": "rtk npm --prefix track_2b run verify (from repository root)",
+      "passed": 27,
+      "failed": 0,
+      "skipped": 0,
+      "brokenFixturesFail": 12,
+      "referenceRepairsPass": 12,
+      "modelBackend": "mock for HTTP integration test; no model performance inferred"
+    },
+    "syntax": {
+      "status": "passed",
+      "command": "rtk npm --prefix track_2b run check:syntax (from repository root)"
+    },
+    "benchmarkHelp": {
+      "status": "passed",
+      "command": "rtk node track_2b/src/benchmark.mjs --help (from repository root)"
+    },
+    "genuineApertusInference": {
+      "status": "NOT RUN",
+      "reason": "No endpoint or credentials configured"
+    },
+    "dockerComposeConfig": {
+      "status": "NOT VERIFIED",
+      "reason": "Docker CLI unavailable; configuration received source review only"
+    },
+    "dockerBuildAndStartup": {
+      "status": "NOT VERIFIED",
+      "reason": "Docker CLI unavailable"
+    },
+    "cleanCheckoutMakeRun": {
+      "status": "NOT VERIFIED",
+      "reason": "Docker and GNU Make unavailable on this host"
+    },
+    "reportPdf": {
+      "status": "verified",
+      "pagesTotal": 3,
+      "referencePages": 1,
+      "reportPagesExcludingReferences": 2,
+      "maxReportPagesExcludingReferences": 6
+    },
+    "demoVideo": {
+      "status": "verified",
+      "durationSeconds": 109,
+      "maxDurationSeconds": 120,
+      "codec": "H.264",
+      "dimensions": "1280x720",
+      "showsGenuineApertusInference": false,
+      "mockLabelVisible": true
+    },
+    "dataDirectory": {
+      "status": "verified",
+      "bytes": 11035,
+      "maxBytes": 104857600
+    },
+    "githubActions": {
+      "status": "not used",
+      "workflowFilesTracked": 0
+    }
+  }
+}

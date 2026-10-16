@@ -11,10 +11,10 @@ Sometimes an AI writes a patch that looks convincing but does not fix a bug. Scy
 | Criterion | Question judges will ask | Where to inspect | Status |
 |---|---|---|---|
 | Purposeful AI use | Did Apertus actually diagnose, repair and critique a failure? | src/core.mjs; a genuine run | Workflow built; live Apertus run not yet recorded |
-| Technical rigor | Can we reproduce failures, and are tests independent? | src/verifier.mjs, src/benchmark.mjs, tests/ | 25 independent Node tests pass |
+| Technical rigor | Can we reproduce failures, and are tests independent? | src/verifier.mjs, src/benchmark.mjs, tests/ | 27 local Node tests pass; Docker runtime not tested here |
 | Value, cost and scalability | Why does anyone need this, how expensive is it, and what are its limits? | Dashboard, benchmark JSON/TSV, technical report | Single-file demonstration, not enterprise-grade |
 | Sovereign deployability | Can source code and models stay on a controlled machine? | compose.yaml, compose.onprem.yaml, Makefile | On-prem configuration prepared, GPU startup unverified |
-| Feasibility | Does make run launch something useful from a clean checkout? | README, Docker Compose, data/ | Node package checks pass; Docker runtime test pending |
+| Feasibility | Does make run launch something useful from a clean checkout? | README, Docker Compose, data/ | Node checks pass; Docker configuration/build/start are **NOT VERIFIED** on this host |
 
 The official Track 2B template requires a **public repository preserving track_2b/**, Docker **make run**, a sovereign deployment option (on-premises, air-gapped or Swiss cloud), data below 100 MB, a technical-report PDF under six pages excluding references, and a two-minute-or-shorter demo video. Submit through the official Hack Apertus portal, not Devpost. Official template: https://github.com/HackApertus/project-template/tree/main/track_2b
 

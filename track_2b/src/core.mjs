@@ -8,12 +8,13 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { readFile, writeFile, rename, mkdir, stat } from 'node:fs/promises';
 import { join, dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 
 const MAX_PATCH_BYTES = 24_000;
 const MAX_OUTPUT_CHARS = 3_500;
 const MAX_VERIFY_WAIT_MS = 25_000;
-const root = resolve(dirname(new URL(import.meta.url).pathname), '..');
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const casesFile = join(root, 'data', 'cases.json');
 
 export function sha256(value) {
@@ -79,10 +80,13 @@ export class ApertusClient {
     this.timeoutMs = timeoutMs;
     this.requestCount = 0;
     this.tokenTotals = {prompt: 0, completion: 0, total: 0};
+    this.interactions = [];
   }
-  async complete(messages, maxTokens = 1200) {
+  async complete(messages, maxTokens = 1200, {stage = 'inference'} = {}) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    const requestNumber = ++this.requestCount;
+    const started = Date.now();
     try {
       const res = await this.fetchImpl(this.endpoint, {
         method:'POST',
@@ -94,17 +98,41 @@ export class ApertusClient {
           max_tokens:maxTokens,stream:false}),
         signal:controller.signal,
       });
-      if (!res.ok) throw new Error(`Apertus endpoint HTTP ${res.status}: ${(await res.text()).slice(0,250)}`);
-      const json = await res.json();
+      if (!res.ok) throw new Error(`Apertus endpoint HTTP ${res.status}`);
+      const transportBody=await res.text();
+      let json;
+      try { json=JSON.parse(transportBody); }
+      catch {
+        const safeBody=this.key?transportBody.split(this.key).join('[REDACTED]'):transportBody;
+        this.interactions.push({requestNumber,stage,startedAt:new Date(started).toISOString(),
+          elapsedMs:Date.now()-started,errorCategory:'malformed_endpoint_json',
+          responseSha256:sha256(transportBody),response:safeBody.slice(0,64_000),
+          truncated:transportBody.length>64_000});
+        throw new Error('Apertus endpoint returned invalid JSON');
+      }
       const value = json?.choices?.[0]?.message?.content;
       const text = typeof value === 'string' ? value :
         (Array.isArray(value) ? value.map(x=>x.text ?? '').join('') : '');
+      const safeText=this.key?text.split(this.key).join('[REDACTED]'):text;
+      this.interactions.push({requestNumber,stage,startedAt:new Date(started).toISOString(),
+        elapsedMs:Date.now()-started,responseSha256:sha256(text),
+        transportResponseSha256:sha256(transportBody),
+        response:safeText.slice(0,64_000),
+        truncated:text.length>64_000,
+        usage:json?.usage ? {prompt:json.usage.prompt_tokens??null,
+          completion:json.usage.completion_tokens??null,total:json.usage.total_tokens??null} : null});
       if (!text.trim()) throw new Error('Apertus endpoint returned empty response');
-      this.requestCount += 1;
       this.tokenTotals.prompt += json?.usage?.prompt_tokens ?? 0;
       this.tokenTotals.completion += json?.usage?.completion_tokens ?? 0;
       this.tokenTotals.total += json?.usage?.total_tokens ?? 0;
       return text;
+    } catch (error) {
+      if (!this.interactions.some(item=>item.requestNumber===requestNumber)) {
+        this.interactions.push({requestNumber,stage,startedAt:new Date(started).toISOString(),
+          elapsedMs:Date.now()-started,errorCategory:error?.name==='AbortError'?'timeout':
+            /^Apertus endpoint HTTP /.test(error?.message||'')?'http_error':'connection_or_response_error'});
+      }
+      throw error;
     } finally { clearTimeout(timer); }
   }
 }
@@ -144,6 +172,9 @@ function message(role, content) {return {role,content};}
 /** Genuine inference only; never emit a model-success result for a mock or baseline. */
 export async function repairCase(entry, {client, verifier, onStep=()=>{}, maxAttempts=2} = {}) {
   if (!(client && verifier)) throw new Error('Apertus client and offline verifier are required');
+  if (!Number.isSafeInteger(maxAttempts) || maxAttempts < 1 || maxAttempts > 2) {
+    throw new Error('Repair attempts must be an integer from 1 to 2');
+  }
   const startedAt = new Date().toISOString();
   const before = sha256(entry.broken);
   onStep('baseline');
@@ -155,7 +186,7 @@ export async function repairCase(entry, {client, verifier, onStep=()=>{}, maxAtt
     message('user',`Issue: ${entry.issue}\n\nSource file bug.cjs:\n${entry.broken}\n\nObserved failing test output:\n${baseline.output.slice(-1200)}`),
   ];
   onStep('diagnosis');
-  const diagnosisObj = parseObject(await client.complete(diagnosisMessages,500));
+  const diagnosisObj = parseObject(await client.complete(diagnosisMessages,500,{stage:'diagnosis'}));
   const diagnosis = {
     rootCause: String(diagnosisObj.rootCause ?? '').slice(0,600),
     confidence: Math.max(0,Math.min(1,Number(diagnosisObj.confidence) || 0)),
@@ -170,12 +201,13 @@ export async function repairCase(entry, {client, verifier, onStep=()=>{}, maxAtt
     const response = await client.complete([
       message('system','You are Apertus v1.5 acting as a constrained code-repair agent. Return JSON only: {"path":"bug.cjs","summary":"what changed","content":"COMPLETE JavaScript CommonJS source"}. Only modify bug.cjs. Preserve exports and unrelated behavior. No shell calls or markdown.'),
       message('user',`Issue: ${entry.issue}\nDiagnosis: ${diagnosis.rootCause}\nOriginal source:\n${entry.broken}\n${i>1 ? `Previous patch failed. Verifier output:\n${lastOutput.slice(-1800)}\nPrevious patch:\n${lastPatch?.content}` : `Baseline failed with:\n${baseline.output.slice(-1200)}`}`),
-    ],2500);
+    ],2500,{stage:`patch-${i}`});
     const patch = validatePatch(parseObject(response));
     lastPatch = patch;
     onStep(`verification ${i}`);
     const verification = await verifier.send(entry.id,patch.content);
-    attempts.push({ iteration:i,summary:patch.summary,sourceSha256:sha256(patch.content),
+    attempts.push({ iteration:i,summary:patch.summary,proposedPatch:patch.content,
+      sourceSha256:sha256(patch.content),
       verifierPass:verification.ok,verifierOutputSha256:sha256(verification.output),
       verifierExcerpt:verification.output.slice(-1100),verificationExitCode:verification.exitCode });
     lastOutput = verification.output;
@@ -186,7 +218,7 @@ export async function repairCase(entry, {client, verifier, onStep=()=>{}, maxAtt
   const critiqueValue = parseObject(await client.complete([
     message('system','You are an independent Apertus patch reviewer. Return only JSON: {"verdict":"pass|fail|uncertain","summary":"evidence based assessment"}. If tests fail, you must not pass.'),
     message('user',`Issue: ${entry.issue}\nDiagnosis: ${diagnosis.rootCause}\nPatch summary: ${lastPatch.summary}\nVerifier outcomes: ${JSON.stringify(attempts.map(a=>({pass:a.verifierPass,excerpt:a.verifierExcerpt.slice(-400)})))}`),
-  ],500));
+  ],500,{stage:'critique'}));
   const critique = {verdict:['pass','fail','uncertain'].includes(critiqueValue.verdict)?critiqueValue.verdict:'uncertain',
     summary:String(critiqueValue.summary??'').slice(0,750)};
   const finalVerified = attempts.at(-1)?.verifierPass === true;
@@ -201,10 +233,42 @@ export async function repairCase(entry, {client, verifier, onStep=()=>{}, maxAtt
       beforeSha256:before,afterSha256:sha256(lastPatch.content)},
     critique,independentlyVerified:finalVerified,success,
     inferenceCalls:client.requestCount,usage:client.tokenTotals,
+    modelInteractions:client.interactions??[],
     evaluationLimitations:['Small synthetic fixture','No proof of general software-repair correctness','Public hidden tests kept out of prompt but included in dataset for reproducibility'],
   };
   evidence.evidenceSha256 = sha256(JSON.stringify(evidence));
   onStep(success?'completed':'unresolved');
+  return evidence;
+}
+
+export function createFailureEvidence(entry, client, error, startedAt, {runId=randomUUID()}={}) {
+  const interactions=client?.interactions??[];
+  let diagnosis=null;
+  const diagnosisResponse=interactions.find(item=>item.stage==='diagnosis'&&item.response)?.response;
+  if (diagnosisResponse) {
+    try { diagnosis=parseObject(diagnosisResponse); } catch { /* malformed output remains in modelInteractions */ }
+  }
+  const attempts=interactions.filter(item=>/^patch-\d+$/.test(item.stage)).map(item=>{
+    let proposedPatch=null;
+    if (item.response) {
+      try { proposedPatch=validatePatch(parseObject(item.response)); } catch { /* retain raw response below */ }
+    }
+    return {iteration:Number(item.stage.slice(6)),proposedPatch:proposedPatch?.content??null,
+      proposedPatchSha256:proposedPatch?sha256(proposedPatch.content):null,
+      responseSha256:item.responseSha256??null,errorCategory:item.errorCategory??
+        (proposedPatch?null:'malformed_model_output'),verifierPass:null};
+  });
+  const message=String(error?.message||error||'Unknown failure').slice(0,350);
+  const category=/JSON|Apertus did not|attempted|patch|response/i.test(message)?'malformed_or_rejected_model_output':
+    /verifier|fixture|source/i.test(message)?'verification_error':
+    /timeout/i.test(message)?'timeout':'runtime_error';
+  const evidence={schemaVersion:1,runId,startedAt,completedAt:new Date().toISOString(),
+    caseId:entry.id,model:client?.model??null,providerEndpoint:client?.endpoint?.replace(/\/chat\/completions$/,'')??null,
+    modelEndpointQueried:(client?.requestCount??0)>0,modelIdentityVerified:false,
+    modelIdentityNote:'The configured model identifier is not independently attested by the endpoint.',
+    status:'error',error:{category,message},diagnosis,attempts,modelInteractions:interactions,
+    inferenceCalls:client?.requestCount??0,usage:client?.tokenTotals??null};
+  evidence.evidenceSha256=sha256(JSON.stringify(evidence));
   return evidence;
 }
 

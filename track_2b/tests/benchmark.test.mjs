@@ -34,9 +34,11 @@ test('benchmark records real verifier results and honest errors without referenc
     assert.equal(report.errors,1);
     assert.equal(report.rows[0].firstPass,true);
     assert.equal(report.rows[1].status,'error');
+    assert.match(report.rows[1].evidenceSha256,/^[0-9a-f]{64}$/);
+    assert.ok(report.rows[1].evidenceFile);
     assert.ok(!JSON.stringify(prompts).includes(first.reference),'reference code must never be in model prompts');
     const saved=await saveBatch(root,'sample',report);
-    assert.match(await readFile(saved.tsvFile,'utf8'),/caseId\tstatus/);
+    assert.match(await readFile(saved.tsvFile,'utf8'),/caseId\tmodel\tendpoint\tstatus/);
     assert.equal(JSON.parse(await readFile(saved.jsonFile,'utf8')).rate,0.5);
   } finally {await rm(root,{recursive:true,force:true});}
 });

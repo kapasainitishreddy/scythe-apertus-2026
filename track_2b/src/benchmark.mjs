@@ -5,10 +5,14 @@ import { parseArgs } from 'node:util';
 import { performance } from 'node:perf_hooks';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
-import { ApertusClient, VerifierQueue, loadCases, repairCase, saveEvidence } from './core.mjs';
+import { ApertusClient, VerifierQueue, loadCases, repairCase, saveEvidence, createFailureEvidence } from './core.mjs';
 
 function clean(value) { return String(value ?? '').replace(/[\t\n\r]+/g, ' ').slice(0, 240); }
+function tsvCell(value) {
+  return `"${String(value ?? '').replace(/\r?\n/g,'\\n').replace(/\t/g,'\\t').replace(/"/g,'""')}"`;
+}
 
 export async function evaluateBatch(entries, {
   createClient, verifier, evidenceDir, onResult = () => {}, maxAttempts = 2,
@@ -19,6 +23,7 @@ export async function evaluateBatch(entries, {
   const rows = [];
   for (const entry of entries) {
     const started = performance.now();
+    const startedAt = new Date().toISOString();
     const client = createClient();
     let row;
     try {
@@ -26,18 +31,31 @@ export async function evaluateBatch(entries, {
       const path = await saveEvidence(evidenceDir, evidence);
       row = {
         caseId: entry.id,
+        model:evidence.model,
+        endpoint:evidence.providerEndpoint,
         status: evidence.success ? 'resolved' : 'unresolved',
         verifierPassed: evidence.independentlyVerified,
         firstPass: evidence.attempts[0]?.verifierPass === true,
         attempts: evidence.attempts.length,
         modelCalls: evidence.inferenceCalls,
         reportedTokens: evidence.usage.total || null,
+        diagnosis:evidence.diagnosis.rootCause,
+        proposedPatches:JSON.stringify(evidence.attempts.map(({iteration,summary,proposedPatch,verifierPass})=>
+          ({iteration,summary,content:proposedPatch,verifierPass}))),
         evidenceSha256: evidence.evidenceSha256,
         evidenceFile: path,
       };
     } catch (error) {
-      row = { caseId: entry.id, status: 'error', error: clean(error?.message || error),
-        modelCalls: client.requestCount ?? 0, reportedTokens: client.tokenTotals?.total || null };
+      const evidence=createFailureEvidence(entry,client,error,startedAt);
+      const path=await saveEvidence(evidenceDir,evidence);
+      row = { caseId: entry.id, status: 'error', error: clean(evidence.error.message),
+        model:evidence.model,endpoint:evidence.providerEndpoint,
+        errorCategory:evidence.error.category,
+        modelCalls: evidence.inferenceCalls, reportedTokens: client.tokenTotals?.total || null,
+        diagnosis:evidence.diagnosis?.rootCause??null,
+        proposedPatches:JSON.stringify(evidence.attempts.map(({iteration,proposedPatch,verifierPass})=>
+          ({iteration,content:proposedPatch,verifierPass}))),
+        attempts:evidence.attempts.length,evidenceSha256:evidence.evidenceSha256,evidenceFile:path };
     }
     row.elapsedMs = Math.round(performance.now() - started);
     rows.push(row);
@@ -60,21 +78,27 @@ export async function evaluateBatch(entries, {
 export async function saveBatch(dir, runId, report) {
   await mkdir(dir, {recursive:true});
   const base = join(dir, `repairbench-${runId}`);
-  const fields = ['caseId','status','verifierPassed','firstPass','attempts','modelCalls',
-    'reportedTokens','elapsedMs','evidenceSha256','error'];
-  const tsv = [fields.join('\t'), ...report.rows.map(row => fields.map(f => clean(row[f])).join('\t'))].join('\n')+'\n';
+  const fields = ['caseId','model','endpoint','status','diagnosis','proposedPatches','verifierPassed',
+    'firstPass','attempts','modelCalls','reportedTokens','elapsedMs','errorCategory','error','evidenceSha256','evidenceFile'];
+  const tsv = [fields.join('\t'), ...report.rows.map(row => fields.map(f => tsvCell(row[f])).join('\t'))].join('\n')+'\n';
   const jsonFile = base+'.json';
   await writeFile(jsonFile, JSON.stringify(report,null,2)+'\n');
   await writeFile(base+'.tsv',tsv);
   return {jsonFile,tsvFile:base+'.tsv'};
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === new URL(import.meta.url).pathname) {
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { values } = parseArgs({options:{
     limit:{type:'string',default:'2'},
     case:{type:'string'},
     attempts:{type:'string',default:'2'},
+    help:{type:'boolean',default:false},
   }});
+  if(values.help){
+    console.log('Usage: node src/benchmark.mjs [--limit 1..12] [--case CASE_ID] [--attempts 1|2]');
+    console.log('Requires a genuine Apertus-compatible LLM_BASE_URL; mock output is not model performance.');
+    process.exit(0);
+  }
   if (!process.env.LLM_BASE_URL) throw Error('LLM_BASE_URL is required for genuine Apertus inference');
   const all = await loadCases();
   const limit = Number(values.limit), maxAttempts = Number(values.attempts);

@@ -11,7 +11,7 @@
 | Model use | Bug diagnosis, minimal code generation, verification-feedback repair, final critique |
 | Verifier | Separate unprivileged Docker container, with no networking or LLM credentials |
 | Output | SHA-256 evidence report per actual Apertus attempt |
-| Project status | Tested prototype, genuine Apertus inference pending external endpoint |
+| Project status | 27 local tests pass; real inference and Docker startup are not verified |
 
 ## The problem
 
@@ -38,7 +38,7 @@ make run
 
 The model server should implement OpenAI-compatible `POST /chat/completions` with the configured `model` name. When using a containerized or hosted gateway, replace the URL and model ID as actually served. For an entirely on-premises topology, host Apertus on local administered compute and restrict that endpoint to your internal network. The verifier service stays `network_mode: none` regardless of the selected model endpoint.
 
-**If no model URL is configured:** the dashboard deliberately shows “MODEL NOT CONNECTED”, disables the repair action, and still allows checking every broken/reference pair. It does not simulate a real model repair or invent success rates.
+**If no model URL is configured:** the dashboard shows “MODEL NOT CONNECTED”, disables the repair action, and still allows checking every broken/reference pair. It does not simulate a real model repair or invent success rates.
 
 ## Optional: fully on-premises Apertus server (GPU machine)
 
@@ -123,11 +123,11 @@ This validates the curated dataset and executes a full queue-based integration t
 
 ## Evidence and honest boundaries
 
-- **25/25** package tests passed on the local test environment as of October 15, 2026.
+- **27/27** package tests passed on the local Windows test environment on October 15, 2026.
 - **12/12** broken implementations fail their hidden checks; **12/12** curated reference repairs pass those checks.
 - **Real Apertus repair success rate:** not measured until a genuine model endpoint is used.
 - The configured model identifier is not cryptographically attested by the HTTP API. Evidence records explicitly say `modelIdentityVerified: false`; independent source/test verification is separate from provider/model authenticity.
-- **`make run` Docker Compose:** provided and YAML-parsed, not executed in the current build container because Docker is unavailable there.
+- **`make run` Docker Compose:** files and Make targets are present; `docker compose config`, image build, and startup were not run because Docker is unavailable on this host. Treat the clean-checkout Docker path as **NOT VERIFIED**.
 - This test suite is **not** SWE-bench. It does not establish performance on realistic multi-file enterprise repositories.
 - The UI does not authenticate remote users; bind the dashboard to loopback or place it behind a trusted reverse proxy if used outside a judge's workstation.
 

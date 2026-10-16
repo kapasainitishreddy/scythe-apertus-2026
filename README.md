@@ -46,7 +46,7 @@ The new batch CLI stores honest real-model results, including failed runs, as JS
 
 ## Evaluation status
 
-Local Node execution of the package passed 25/25 tests, including 12 broken/reference fixture pairs and an end-to-end pipeline test using a **mock LLM response server**. This is **not** a real Apertus repair result. The API endpoint/model identity cannot be independently authenticated by this prototype; evidence never claims cryptographic model verification. An actual Apertus v1.5 run and Docker Compose runtime test are required to claim model performance and deployment reproduction.
+Local Node execution passed 27/27 tests, including all 12 broken/reference fixture pairs, the HTTP-to-verifier pipeline with a **mock LLM response server**, and security regression cases. This is **not** a real Apertus repair result. No `LLM_BASE_URL` or `LLM_API_KEY` was configured in this environment, so genuine inference was not run. Docker is unavailable here, so a clean-checkout `make run` was not executed. The API endpoint/model identity cannot be independently authenticated by this prototype; evidence never claims cryptographic model verification.
 
 ## Licensing
 

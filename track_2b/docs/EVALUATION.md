@@ -32,13 +32,13 @@ The model receives no hidden test code, no reference patch, and no library of pr
 
 - 12/12 broken implementations failed their hidden assertions.
 - 12/12 curated reference implementations passed.
-- 25/25 local Node tests passed, including a full controller-to-offline-worker integration test that used a mock LLM endpoint.
+- 27/27 local Node tests passed on Windows, including all 12 fixture pairs, the controller-to-worker integration test with a mock LLM endpoint, and security regression cases.
 - Genuine Apertus inference **not yet measured**.
-- Docker Compose runtime **not executed on this authoring host** (Docker CLI unavailable). Compose YAML parsed successfully.
+- Docker Compose validation and runtime **not executed on this host** (Docker CLI unavailable); configuration received source review only.
 
 ## Fixed experiment ledger
 
-For real Apertus inference, start the two Docker services and run `docker compose exec -T app node src/benchmark.mjs --limit 2`. After validating the endpoint and inspecting reports, use `--limit 12`. JSON and TSV files include every successful, unresolved or errored case with elapsed milliseconds, calls, token counts when reported, and a link to the SHA-256 evidence record. No model-free or mocked benchmark counts as Apertus performance.
+For real Apertus inference, start the two Docker services and run `docker compose exec -T app node src/benchmark.mjs --limit 2`. After validating the endpoint and inspecting reports, use `--limit 12`. JSON and TSV files include successful, unresolved, and errored cases, model and endpoint identifiers, diagnosis, proposed patches, retry count, elapsed milliseconds, calls, token counts when reported, error category, and evidence digest. No model-free or mocked benchmark counts as Apertus performance.
 
 ## Security regression checks
 

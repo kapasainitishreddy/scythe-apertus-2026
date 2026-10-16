@@ -1,79 +1,65 @@
 # Scythe Apertus: Sovereign Autonomous Software Repair
 
-**Hack Apertus 2026 · Online · Track 2B: Own Project**  
-**Team:** Syrava  
-**Project:** An open-source, on-premises repair agent using Apertus v1.5  
-**Demo:** 109-second prototype walkthrough: https://github.com/kapasainitishreddy/scythe-apertus-2026/blob/main/track_2b/Scythe_Apertus_Demo_Preview.mp4 (fixture results, not genuine model results).  
-**Code:** https://github.com/kapasainitishreddy/scythe-apertus-2026 (`track_2b/`); license Apache-2.0.
+**Hack Apertus 2026 · Track 2B: Own Project · Team Syrava**  
+**Code:** [github.com/kapasainitishreddy/scythe-apertus-2026](https://github.com/kapasainitishreddy/scythe-apertus-2026)  
+**Demo:** 109-second fixture-based prototype preview. It does not show genuine Apertus inference.
 
-## 1. Abstract and problem
+## Abstract and problem
 
-AI-generated software patches can be persuasive yet incorrect. Developers also need assurances about source-code custody, tool permissions and whether a model's asserted success matches an independently observed test result. Scythe Apertus is a deliberately constrained, open-source prototype: Apertus v1.5 diagnoses a small defect, writes a complete replacement for one allowlisted file and optionally retries after a failing test. A separate, offline Docker verifier runs independent assertions and returns observed results. The application records per-attempt evidence, SHA-256 hashes, model identity and an explicit pass/fail decision. The project includes twelve originally authored software defects, a web demonstration and a Docker `make run` launch path. The broader Scythe/BlackScythe IDE predates this event; the independently packaged Apertus prototype is the Hack Apertus output.
+AI-generated patches can look plausible while failing to repair the reported behavior. A repair tool also needs clear boundaries around source custody, permissions, and who decides whether a patch passes. Scythe Apertus is a small open-source prototype in which Apertus v1.5 diagnoses a defect and proposes a complete replacement for one allowlisted file. A separate offline worker runs independent assertions, and bounded test feedback can guide a second patch. The application records model responses, patch and test-output hashes, and the final verification decision. The benchmark contains twelve original JavaScript defects.
 
-## 2. Architecture and sovereign deployment
+## Why Apertus is central
 
-**Target architecture (mandatory): on-premises.** The controller, offline verifier and OpenAI-compatible Apertus model server can run on equipment administered by the using organization. The model is separately served from locally held Apertus weights, e.g. through vLLM. In this configuration source code need not leave the operator's network. A public hosted endpoint is possible for development, but **is not required by, and is not evidence of, a sovereign deployment**. Actual local model serving was not reproduced in the authoring environment.
+Apertus v1.5 performs the task's four model-dependent steps: diagnosis, patch generation, feedback-guided retry, and a final critique. The controller sends OpenAI-compatible chat-completion requests to a configured endpoint. Model output must parse as JSON, pass a strict `bug.cjs` allowlist and size checks, and then pass the independent test worker. A model's confidence or critique cannot turn a failing test into a success. The model identifier is recorded, but the endpoint does not cryptographically attest which weights served a request.
 
-A separate `compose.onprem.yaml` overlay supplies the Swiss AI Initiative\'s official vLLM model-server image for NVIDIA GPU hosts, completing the optional fully local deployment topology. This GPU configuration was not executed on the authoring machine. The controller serves an accessible local UI at `127.0.0.1:8787` and accepts a benchmark case ID. It sends the issue and broken source to Apertus via `LLM_NAME`, `LLM_BASE_URL` and optional `LLM_API_KEY`. After validating the JSON patch schema, it writes the one allowed replacement (`bug.cjs`) to a Docker request volume. The verifier, which has **no network and receives no model credentials**, reads the request using a read-only mount, launches a bounded Node test process as a non-root user, and writes pass/fail output to a separate volume. The controller reads that response and may request one additional Apertus attempt. The final result requires both the independent test pass and a passing second-model critique.
+## Architecture and sovereign deployment
 
-**Flow:** Issue + failing fixture → Apertus diagnosis → allowlisted patch → offline verifier → bounded retry → Apertus critique → SHA-256 evidence JSON.
+The Docker topology has an HTTP controller, a verifier worker, and an optional Apertus model server. The controller sends only a curated case's issue and broken source to the model. It transfers a validated candidate to the worker through a file queue. The worker runs the candidate in a separate Node process and returns a bounded result. The controller stores a JSON evidence record in a persistent Docker volume.
 
-Two Docker Compose services use a read-only image filesystem, disabled privilege escalation and Linux capability drops. The verifier also uses `network_mode: none`, PID/memory/CPU limits, and a deliberately scrubbed subprocess environment. The app has no worker-execution endpoint other than selecting the twelve curated cases. Docker is defense in depth, not a formal containment proof; the worker process and the child code still share an isolated filesystem namespace.
+The intended sovereign deployment runs all three services on hardware administered by the organization. The official Swiss AI Initiative vLLM image is referenced by the optional Compose overlay; the model server is reachable only on the internal Compose network. The verifier has no network, receives no model credentials, mounts requests read-only, and runs with a read-only image filesystem, dropped Linux capabilities, no-new-privileges, resource limits, and Node's permission model. A hosted endpoint can be used for development, but it does not demonstrate sovereign operation.
 
-## 3. Purposeful Apertus integration
+## Dataset, licensing, and prior work
 
-The configured model is `swiss-ai/Apertus-v1.5-8B` by default. Apertus is responsible for **(a)** concise root-cause diagnosis, **(b)** a minimal complete-file repair proposal, **(c)** a bounded correction using the previous verifier's error, and **(d)** a final evidence-based critique. These calls use the OpenAI-compatible `/chat/completions` schema. The prompts require JSON with explicit keys; patches outside `bug.cjs`, empty outputs and oversized source files are rejected before reaching the verifier. Model messages do not include reference fixes or hidden test source. Only the isolated verifier observes actual test outcomes; model confidence alone never determines success.
+The twelve cases cover pagination, hostname matching, retry limits, configuration values, deduplication, exact lookup, numeric bounds, date windows, cache expiration, sorting, integer parsing, and tax order. Each record contains a broken example, a reference repair, hidden assertions, provenance, and license metadata. The examples are original, synthetic, and contain no personal data. The dataset is CDLA-Permissive-2.0; source is Apache-2.0; authored documentation and media are CC BY 4.0. Apertus weights are not redistributed.
 
-This architecture uses no proprietary model-specific features. The model endpoint can be swapped for an operator-managed installation of Apertus v1.5 8B/70B without changing the repair controller. The benchmark executes on Node rather than on the LLM GPU. **No model weights, private repositories, secrets or third-party copyrighted excerpts are bundled.**
+The broader Scythe/BlackScythe Forge IDE predates the hackathon and remains a separate private project. This public repository contains a separately packaged prototype and does not include that private source. The repair loop and benchmark implementation in this repository are the hackathon work described here.
 
-## 4. Dataset and evaluation methodology
+## Experimental method
 
-`data/cases.json` contains twelve original CommonJS defect/repair pairs covering: pagination boundaries; allowlisted hostname suffixes; exponential backoff caps; falsy configuration values; stable case-insensitive deduplication; exact-record lookup; numeric clamping; inclusive date windows; cache expiration; numeric sort; zero integer parsing; and post-discount tax computation. Every record includes a source statement, per-item license, an issue description, broken source, reference solution, hidden Node assertions, and a personal-data flag (false). The dataset is licensed CDLA-Permissive-2.0; example code is also Apache-2.0. No human-subject data was collected.
+The fixed evaluator first verifies that each broken fixture fails and its reference repair passes. The reference and hidden tests are not included in model prompts. A real run records the case, configured model and endpoint, diagnosis, every proposed patch, independent outcomes, retry count, wall time, token usage when returned, error category, and SHA-256 digest. Both JSON and TSV batch reports are produced. The evaluation uses bounded retries and does not change the verifier between cases. Since the fixtures and assertions are public, results are vulnerable to memorization and do not establish performance on repository-scale tasks. This custom set is not comparable to SWE-bench or its variants.
 
-**Metric:** A model repair is resolved only when the offline verifier's tests pass **and** Apertus's final critique says `pass`. Evidence includes the original and patch SHA-256, each verifier outcome/hash, model identifier, timestamps, token totals if supplied, and a final record digest. We deliberately report model failures, exceptions and timeouts rather than deleting them from the denominator. These tiny examples are *not* SWE-bench, and public tests permit possible contamination or reward gaming.
+## Results and failures
 
 | Check | Observed result on October 15, 2026 |
-|:--|:--|
-| Broken original fixtures fail independent Node assertions | **12 / 12** |
-| Reference fixes pass those assertions | **12 / 12** |
-| Local automated Node test suites (includes mocked LLM integration) | **25 / 25** |
-| Genuine Apertus model repair attempts | **Not run** |
-| Real Apertus repair rate / token cost / latency | **Not measured** |
-| Docker Compose launch on a Docker-enabled host | **Not executed in authoring host** |
+|---|---:|
+| Broken fixtures failing independent assertions | 12 / 12 |
+| Reference repairs passing those assertions | 12 / 12 |
+| Local Node tests, including mocked HTTP integration and security cases | 27 / 27 |
+| Genuine Apertus inference | Not run: no endpoint or credentials configured |
+| Real-model repair rate, latency, and token cost | Not measured |
+| Docker Compose build, start, and restart | Not run: Docker is unavailable on this host |
 
-The optional batch evaluator in `src/benchmark.mjs` preserves every attempted case in a JSON and TSV report, including unresolved repairs and endpoint errors. The worker's child process now uses Node's permission model to deny filesystem writes, child process spawning, and reads outside the isolated fixture folder. This is defense in depth, not a formal guarantee against all adversarial code.
+The integration test uses a local mock completion endpoint and demonstrates the controller-to-worker flow only. It is not a model result. Local syntax checks passed. Docker Compose configuration was inspected in source, but `docker compose config`, image builds, and container startup could not be run. The official Track 2B `make run` command therefore remains **NOT VERIFIED** from a clean checkout.
 
-The integration test uses an explicitly mocked language-model endpoint to exercise HTTP → controller → file queue → verifier → evidence. It proves the wiring under test conditions; **it is not evidence that Apertus made the repair**. Docker Compose YAML was independently parsed and checked for an offline verifier; the Docker CLI was not present in the authoring environment.
+## Security and limitations
 
-## 5. Reproducibility
+The model can propose source but cannot call a shell or apply arbitrary paths. The candidate runs only in the verifier process. Node permissions deny child-process creation, filesystem writes, and reads outside the temporary fixture. Docker's `network_mode: none` is the worker's network boundary; local host tests do not establish network isolation. The current verifier writes candidate and test files into the same temporary directory, so malicious candidate code could inspect public test source. The data is synthetic and public, the system supports one file and JavaScript only, and Docker is defense in depth rather than a formal containment proof. The dashboard is not designed for exposure to untrusted users.
 
-Run `cd track_2b && make run` on a Docker-enabled host. Open `http://localhost:8787` and select **Verify fixture** to reproduce an offline original-fails/reference-passes check. This requires no model. For a genuine Apertus repair, set `LLM_NAME` to the served Apertus model identifier, `LLM_BASE_URL` to its on-premises OpenAI-compatible endpoint and `LLM_API_KEY` only if needed. Restart `make run`, select a case and click **Run Apertus repair**. Retrieve the evidence JSON from the persistent Docker `evidence` volume. On a machine with Node.js 20+, `node --test tests/*.test.mjs` runs the independent package regression suite without GitHub Actions, CI providers, or model API costs.
+## Reproduction
 
-To reproduce reported actual model performance, record the model weight revision, serving stack, hardware, endpoint configuration, exact source commit, prompts, all failure records, token usage and fixture IDs. This submission deliberately does not invent values for steps that have not yet been run.
-
-## 6. Limitations, value, and next work
-
-**Scope:** The released demonstration addresses twelve small synthetic single-file JavaScript problems. It does not claim real-world repo-scale fault localization, coverage of arbitrary languages, production-ready patch signing, adversarial-proof sandboxing, or the ability to fix unconstrained bugs. The initial benchmark's test code is public; generated code may discover those tests at runtime, so a private external holdout is a future requirement. The UI has no multi-user authentication and binds to loopback via Docker; exposing it publicly would require additional authentication and security review.
-
-**Value:** The operating organization can substitute its own Apertus inference host, retain code locally and audit why a patch was accepted. CPU-only isolated test execution avoids consuming additional model tokens to decide whether a patch passes. The architecture is modular enough to add real language/repository adapters, permissioned tools and independent benchmark datasets.
-
-**Next work:** Run multiple genuine Apertus v1.5 model trials and preserve unsuccessful attempts; evaluate against licensed real-world issues with an independent hidden holdout; add repository-scale localization; strengthen sandbox isolation and formal provenance; measure end-to-end latency, prompt budget, total cost and failure rates; and integrate the evidence format into the existing Scythe review gate.
-
-## Licences and pre-existing intellectual property
-
-New source and build files: **Apache-2.0**. Authored documentation, report and demo script: **CC BY 4.0**. Original dataset: **CDLA-Permissive-2.0**. The pre-existing private Scythe monorepo is *not included*, and no rights to that unrelated code are implied. All newly authored code in this bundle is independently redistributable.
+From the repository root, run `make run` on a Docker-enabled machine to build and start the dashboard and offline worker. Open `http://localhost:8787` and use **Verify fixture** to check broken/reference discrimination without a model. For genuine model work, first accept the official Apertus model terms, serve Apertus v1.5 with the published Swiss AI vLLM image, and set `LLM_NAME`, `LLM_BASE_URL`, and any required `LLM_API_KEY` outside version control. On a GPU host, `make run-onprem` uses the included serving overlay and a local `HF_TOKEN`. Run `node --test tests/*.test.mjs` from `track_2b/` for the local suite. The benchmark CLI requires a real model endpoint and writes JSON and TSV results under `/artifacts`.
 
 ## References
 
-1. Xia, C. S., et al. *Agentless: Demystifying LLM-based Software Engineering Agents.* 2024. https://arxiv.org/abs/2407.01489
-2. Zhang, Y., et al. *AutoCodeRover: Autonomous Program Improvement.* 2024. https://arxiv.org/abs/2404.05427
-3. Jimenez, C. E., et al. *SWE-bench: Can Language Models Resolve Real-World GitHub Issues?* 2023. https://arxiv.org/abs/2310.06770
-4. Yang, J., et al. *SWE-smith: Scaling Data for Software Engineering Agents.* 2025. https://arxiv.org/abs/2504.21798
-5. Hack Apertus organizers. *Official Track 2B project template and submission requirements.* 2026. https://github.com/HackApertus/project-template/tree/main/track_2b
-6. Swiss AI Initiative. *Apertus v1.5 8B model card.* https://huggingface.co/swiss-ai/Apertus-v1.5-8B
+1. Xia et al., [Agentless: Demystifying LLM-based Software Engineering Agents](https://arxiv.org/abs/2407.01489), 2024.
+2. Zhang et al., [AutoCodeRover: Autonomous Program Improvement](https://arxiv.org/abs/2404.05427), 2024.
+3. Jimenez et al., [SWE-bench](https://arxiv.org/abs/2310.06770), 2023; see also the [SWE-bench Verified dataset](https://huggingface.co/datasets/SWE-bench/SWE-bench_Verified) and [SWE-bench Pro](https://arxiv.org/abs/2509.16941).
+4. Yang et al., [SWE-smith](https://arxiv.org/abs/2504.21798), 2025; Zheng et al., [SWE-Bench Pro Verified](https://arxiv.org/abs/2609.08149), 2026.
+5. Lalonde et al., [Revisiting Feedback-Driven LLM Code Repair](https://arxiv.org/abs/2609.00362), 2026.
+6. Swiss AI Initiative, [Apertus v1.5 model card and official serving instructions](https://huggingface.co/swiss-ai/Apertus-v1.5-8B).
+7. Hack Apertus, [Track 2B project template](https://github.com/HackApertus/project-template/tree/main/track_2b) and [terms](https://hackapertus.ch/terms-and-conditions).
+8. Gebert, [Ponytail](https://github.com/DietrichGebert/ponytail); Karpathy, [autoresearch](https://github.com/karpathy/autoresearch).
+9. Cloudflare, [workerd](https://github.com/cloudflare/workerd) and [Workers SDK](https://github.com/cloudflare/workers-sdk).
+10. [Microsoft AI Agents Hackathon winners](https://microsoft.github.io/AI_Agents_Hackathon/winners/) and [Agent Academy event winners](https://microsoft.github.io/agent-academy/events/hackathon/). RiskWise, ModelProof, and VendorGuard were reviewed as presentation examples, not described as prior Hack Apertus winners.
 
-*Documentation and report: Creative Commons Attribution 4.0 International (CC BY 4.0).* 
-
-7. Gebert, D. *Ponytail, small complete changes with regression checks.* https://github.com/DietrichGebert/ponytail
-8. Karpathy, A. *autoresearch, fixed evaluation and experiment ledger.* https://github.com/karpathy/autoresearch
-9. Cloudflare. *workerd, local-first testing and self-hostable runtime.* https://github.com/cloudflare/workerd
+*Report and authored documents: CC BY 4.0. Code: Apache-2.0. Dataset: CDLA-Permissive-2.0.*

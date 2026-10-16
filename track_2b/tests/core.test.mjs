@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {ApertusClient, loadCases, parseObject, validatePatch, sha256, repairCase} from '../src/core.mjs';
+import {ApertusClient, loadCases, parseObject, validatePatch, sha256, repairCase, createFailureEvidence} from '../src/core.mjs';
 
 const cases=await loadCases();
 test('parse fenced JSON payload',()=>{
@@ -25,6 +25,19 @@ test('the model client posts the official completion format and accounts tokens'
   assert.equal(auth,'Bearer test_only');
   assert.equal(model,'swiss-ai/Apertus-v1.5-8B');
   assert.equal(client.tokenTotals.total,17);
+});
+test('malformed model responses are retained in hashed failure evidence',async()=>{
+  const client=new ApertusClient({baseUrl:'http://localhost:8899/v1',fetchImpl:async()=>
+    new Response(JSON.stringify({choices:[{message:{content:'not JSON'}}]}),{status:200})});
+  const response=await client.complete([{role:'user',content:'test'}],50,{stage:'diagnosis'});
+  assert.throws(()=>parseObject(response),/did not return JSON/);
+  assert.equal(client.requestCount,1);
+  assert.equal(client.interactions[0].stage,'diagnosis');
+  const evidence=createFailureEvidence(cases[0],client,new Error('Model did not return JSON'),new Date().toISOString());
+  assert.equal(evidence.modelInteractions[0].response,'not JSON');
+  assert.match(evidence.modelInteractions[0].responseSha256,/^[0-9a-f]{64}$/);
+  const {evidenceSha256,...unsigned}=evidence;
+  assert.equal(evidenceSha256,sha256(JSON.stringify(unsigned)));
 });
 test('repair loop produces evidence when independently verified by injected worker',async()=>{
   const entry=cases[0];
@@ -63,4 +76,7 @@ test('failed verification is never reported as a successful repair',async()=>{
   assert.equal(result.success,false);
   assert.equal(result.independentlyVerified,false);
   assert.equal(result.attempts.length,2);
+});
+test('repair retry count is bounded to one or two attempts',async()=>{
+  await assert.rejects(repairCase(cases[0],{client:{},verifier:{},maxAttempts:3}),/integer from 1 to 2/);
 });

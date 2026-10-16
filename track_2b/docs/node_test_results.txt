@@ -1,7 +1,14 @@
-Independent source verification (October 15, 2026)
-Node.js built-in test runner: 25 passed, 0 failed, 0 skipped.
-12 original broken fixtures fail their tests, 12 reference fixes pass.
-Model-aware batch tests use a clearly labeled fake completion service.
-No genuine Apertus v1.5 inference result is included.
-Docker Compose on a Docker-enabled machine remains unverified.
-Verification performed without GitHub Actions.
+Independent verification on October 15, 2026 (America/New_York)
+
+Command: rtk npm --prefix track_2b run verify (from repository root)
+Result: 27 tests passed, 0 failed, 0 skipped (Node.js v24.19.0 on Windows).
+
+The suite verifies all 12 original broken fixtures fail and all 12 reference repairs pass their independent assertions. It also covers the HTTP-to-worker pipeline using a local mock completion endpoint, output parsing, patch allowlisting, evidence hashing, retry bounds, and verifier filesystem/process restrictions.
+
+Command: rtk npm --prefix track_2b run check:syntax (from repository root)
+Result: passed for core.mjs, server.mjs, verifier.mjs, and benchmark.mjs.
+
+Command: rtk node track_2b/src/benchmark.mjs --help (from repository root)
+Result: passed; CLI help displays without requiring a model endpoint.
+
+No genuine Apertus endpoint or credentials were configured. No model inference or repair rate is claimed. Docker and GNU Make are not available on this host; Docker Compose config validation, image build, container start/restart, and the clean-checkout make run command were not executed. GitHub Actions were not used.
