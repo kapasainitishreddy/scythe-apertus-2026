@@ -1,6 +1,6 @@
-# Optional full on-premises model stack, intended for a properly provisioned
-# NVIDIA GPU machine with the NVIDIA Container Toolkit installed.
-# The official Swiss AI Initiative image is used; no model weights are bundled.
+# Optional sovereign deployment on compatible NVIDIA GPUs.
+# This uses the official Swiss AI Initiative image and documented vLLM flags.
+# Accept the gated model terms at Hugging Face before starting.
 services:
   app:
     environment:
@@ -10,12 +10,28 @@ services:
   apertus:
     image: ghcr.io/swiss-ai/vllm_apertus_1.5_release:latest-amd64
     gpus: all
+    shm_size: "1gb"
+    command:
+      - vllm
+      - serve
+      - swiss-ai/Apertus-v1.5-8B
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --chat-template-content-format
+      - string
+      - --gpu-memory-utilization
+      - "0.6"
+      - --max-model-len
+      - "8192"
+      - --enable-auto-tool-choice
+      - --tool-call-parser
+      - apertus
     environment:
       HF_TOKEN: "${HF_TOKEN:-}"
-      MODEL_ID: swiss-ai/Apertus-v1.5-8B
-      GPU_MEMORY_UTILIZATION: "0.6"
-      MAX_MODEL_LEN: "8192"
+      HF_HOME: /root/.cache/huggingface
     volumes:
-      - model_cache:/home/appuser/workspace/hf-home
+      - model_cache:/root/.cache/huggingface
 volumes:
   model_cache:
