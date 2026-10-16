@@ -36,10 +36,12 @@ This architecture uses no proprietary model-specific features. The model endpoin
 |:--|:--|
 | Broken original fixtures fail independent Node assertions | **12 / 12** |
 | Reference fixes pass those assertions | **12 / 12** |
-| Local automated Node test suites (includes mocked LLM integration) | **19 / 19** |
+| Local automated Node test suites (includes mocked LLM integration) | **25 / 25** |
 | Genuine Apertus model repair attempts | **Not run** |
 | Real Apertus repair rate / token cost / latency | **Not measured** |
 | Docker Compose launch on a Docker-enabled host | **Not executed in authoring host** |
+
+The optional batch evaluator in `src/benchmark.mjs` preserves every attempted case in a JSON and TSV report, including unresolved repairs and endpoint errors. The worker's child process now uses Node's permission model to deny filesystem writes, child process spawning, and reads outside the isolated fixture folder. This is defense in depth, not a formal guarantee against all adversarial code.
 
 The integration test uses an explicitly mocked language-model endpoint to exercise HTTP → controller → file queue → verifier → evidence. It proves the wiring under test conditions; **it is not evidence that Apertus made the repair**. Docker Compose YAML was independently parsed and checked for an offline verifier; the Docker CLI was not present in the authoring environment.
 
@@ -71,3 +73,7 @@ New source and build files: **Apache-2.0**. Authored documentation, report and d
 6. Swiss AI Initiative. *Apertus v1.5 8B model card.* https://huggingface.co/swiss-ai/Apertus-v1.5-8B
 
 *Documentation and report: Creative Commons Attribution 4.0 International (CC BY 4.0).* 
+
+7. Gebert, D. *Ponytail, small complete changes with regression checks.* https://github.com/DietrichGebert/ponytail
+8. Karpathy, A. *autoresearch, fixed evaluation and experiment ledger.* https://github.com/karpathy/autoresearch
+9. Cloudflare. *workerd, local-first testing and self-hostable runtime.* https://github.com/cloudflare/workerd
