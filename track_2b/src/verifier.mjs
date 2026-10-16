@@ -15,7 +15,9 @@ export async function verifySource(code,hiddenTests,{timeoutMs=12_000}={}) {
     await writeFile(join(folder,'bug.cjs'),code,{mode:0o600});
     await writeFile(join(folder,'verify.test.cjs'),hiddenTests,{mode:0o600});
     const result=await new Promise(resolveResult=>{
-      const child=spawn(process.execPath,['--test','verify.test.cjs'],{
+      // Model-generated JS cannot read outside its fixture, write files, or spawn subprocesses.
+      // Node permission model adds defense in depth inside the offline container.
+      const child=spawn(process.execPath,['--experimental-permission',`--allow-fs-read=${folder}`,'verify.test.cjs'],{
         cwd:folder,shell:false,env:{PATH:process.env.PATH||'/usr/local/bin:/usr/bin:/bin',HOME:'/tmp',NODE_ENV:'test'},
         stdio:['ignore','pipe','pipe'],
       });
