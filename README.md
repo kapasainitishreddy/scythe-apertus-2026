@@ -35,9 +35,18 @@ The code is dependency-light: Node.js standard library, offline `node:test`, and
 - [Independent tests](track_2b/tests/) and documented evaluation protocol
 - [2-minute demo narration](track_2b/docs/DEMO_SCRIPT.md)
 
+## Start here: original build and judging guide
+
+- [What Hack Apertus judges expect](track_2b/docs/EXPECTATIONS.md)
+- [Karpathy-inspired fixed evaluator](track_2b/src/benchmark.mjs)
+- [Offline verifier safety tests](track_2b/tests/security.test.mjs)
+- [Ponytail-inspired engineering rules](track_2b/AGENTS.md)
+
+The new batch CLI stores honest real-model results, including failed runs, as JSON and TSV. It refuses to run unless a model endpoint is configured. Cloudflare hosting is deliberately not needed for the sovereign on-premises submission.
+
 ## Evaluation status
 
-Local Node execution of the package passed 19/19 tests, including 12 broken/reference fixture pairs and an end-to-end pipeline test using a **mock LLM response server**. This is **not** a real Apertus repair result. The API endpoint/model identity cannot be independently authenticated by this prototype; evidence never claims cryptographic model verification. An actual Apertus v1.5 run and Docker Compose runtime test are required to claim model performance and deployment reproduction.
+Local Node execution of the package passed 25/25 tests, including 12 broken/reference fixture pairs and an end-to-end pipeline test using a **mock LLM response server**. This is **not** a real Apertus repair result. The API endpoint/model identity cannot be independently authenticated by this prototype; evidence never claims cryptographic model verification. An actual Apertus v1.5 run and Docker Compose runtime test are required to claim model performance and deployment reproduction.
 
 ## Licensing
 
