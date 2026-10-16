@@ -69,6 +69,22 @@ This composes the controller, offline verifier and a third `apertus` model serve
 5. Apertus critiques the verified result. Success requires **both** the independent tests and a passing critique.
 6. Audit the evidence: before/after SHA-256, per-attempt verifier status, test-output hash, model identifier, token counts when returned, and final record digest. On success or failure the record is saved to the persistent Docker `evidence` volume.
 
+## Fixed-evaluator benchmark (optional real Apertus run)
+
+Ponytail and Karpathy's autoresearch informed this small, inspectable approach: **keep the verifier fixed, record every attempt, and avoid unnecessary frameworks**. Once an actual Apertus model endpoint is running, start with two cases:
+
+```bash
+docker compose exec -T app node src/benchmark.mjs --limit 2
+# Full twelve-case experiment:
+docker compose exec -T app node src/benchmark.mjs --limit 12
+# Or focus on just one broken example:
+docker compose exec -T app node src/benchmark.mjs --case pagination-offset
+```
+
+Each attempt produces evidence; the batch produces `repairbench-<id>.json` and `.tsv` under the persistent `/artifacts` volume. The runner refuses to start without `LLM_BASE_URL`, never replaces model output with a known reference fix, and counts failures and errors. You can copy an artifact out with `docker compose cp app:/artifacts/<filename> ./<filename>`.
+
+To understand the five official judging criteria and learn from comparable past winners, see [What judges expect](docs/EXPECTATIONS.md).
+
 ## Architecture
 
 ```text
@@ -107,7 +123,7 @@ This validates the curated dataset and executes a full queue-based integration t
 
 ## Evidence and honest boundaries
 
-- **19/19** package tests passed on the local test environment as of October 15, 2026.
+- **25/25** package tests passed on the local test environment as of October 15, 2026.
 - **12/12** broken implementations fail their hidden checks; **12/12** curated reference repairs pass those checks.
 - **Real Apertus repair success rate:** not measured until a genuine model endpoint is used.
 - The configured model identifier is not cryptographically attested by the HTTP API. Evidence records explicitly say `modelIdentityVerified: false`; independent source/test verification is separate from provider/model authenticity.
@@ -117,7 +133,7 @@ This validates the curated dataset and executes a full queue-based integration t
 
 ## Safety
 
-Model-generated content is never executed by the controller. The worker does not receive `LLM_API_KEY` and has no network access, privilege escalation, or write access to application source. The workflow restricts patches to one fixture file. Docker process isolation is defense in depth, not a formal security guarantee.
+Model-generated content is never executed by the controller. The worker does not receive `LLM_API_KEY` and has no network access or privilege escalation. Its child Node process also uses the permission model to block filesystem writes, child-process spawning and file reads outside the isolated fixture. The workflow restricts patches to one fixture file. Docker process isolation is defense in depth, not a formal security guarantee.
 
 ## Submission status
 
